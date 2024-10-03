@@ -30,6 +30,9 @@ public class JobBsn {
     public void executeTask() {
         List<ExcelEntity> dataList = repository.findByState(0);
         if (!dataList.isEmpty()) {
+
+            ObjectMapper mapper = new ObjectMapper();
+
             for (ExcelEntity data : dataList) {
                 DoRequest request = new DoRequest();
                 request.setRequestNumber(UUID.randomUUID().toString());
@@ -38,12 +41,13 @@ public class JobBsn {
 
                 var doResponse = doProcess(request);
                 try {
-                    JsonNode outputJob = new ObjectMapper().valueToTree(doResponse.getData());
-                    data.setOutputJob(outputJob); // Burada JSON dəyərini təyin edirik
+                    JsonNode outputJob = mapper.valueToTree(doResponse.getData());
+                    data.setOutputJob(outputJob);
                     data.setState(1);
                     data.setStatus("U");
                     data.setUpdateDate(new Date());
                     repository.save(data);
+                    log.info("Successfully processed TIN: {}", data.getTin());
                 } catch (Exception e) {
                     log.error("Error occurred while saving data: {}", e.getMessage(), e);
                 }
@@ -58,10 +62,9 @@ public class JobBsn {
         DoResponse response = new DoResponse();
         ObjectMapper objectMapper = new ObjectMapper();
 
-        // JSON obyekti yaradın
         JsonNode dataNode = objectMapper.createObjectNode().put("message", str);
 
-        response.setData(dataNode); // Doğru formatda JSON qaytarın
+        response.setData(dataNode);
         return response;
     }
 
